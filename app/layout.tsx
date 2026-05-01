@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'HotelHub - Hotel Management System',
-  description: 'Modern hotel booking and management platform',
+  title: 'Online Hotel Booking System',
+  description: 'Book premium stays with room images, location filters, and seamless online reservations.',
   generator: 'v0.app',
   icons: {
     icon: [

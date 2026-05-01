@@ -28,10 +28,10 @@ export function AdminSidebar() {
       <div className="p-6 border-b border-border">
         <Link href="/admin" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
-            <span className="text-accent-foreground font-bold text-lg">H</span>
+            <span className="text-accent-foreground font-bold text-lg">O</span>
           </div>
           <div>
-            <div className="font-bold text-foreground">HotelHub</div>
+            <div className="font-bold text-foreground">Online Hotel Booking</div>
             <div className="text-xs text-muted-foreground">Admin</div>
           </div>
         </Link>

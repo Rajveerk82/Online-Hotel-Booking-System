@@ -57,7 +57,7 @@ export default function CheckoutPage() {
 
           setBooking(bookingData);
           // Generate a fake QR code URL for the demo
-          setQrCodeData(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=rajveer8283@ptyes%26pn=HotelHub%26am=${bookingData.totalPrice}%26cu=INR%26tn=Booking_${bookingId.substring(0, 8)}`);
+          setQrCodeData(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=rajveer8283@ptyes%26pn=OnlineHotelBookingSystem%26am=${bookingData.totalPrice}%26cu=INR%26tn=Booking_${bookingId.substring(0, 8)}`);
         } else {
           setError('Booking not found');
         }

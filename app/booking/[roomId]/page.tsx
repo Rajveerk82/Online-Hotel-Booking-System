@@ -13,7 +13,7 @@ import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { Room, Booking } from '@/lib/types';
 import { Spinner } from '@/components/ui/spinner';
 import { differenceInDays } from 'date-fns';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getRoomImage } from '@/lib/utils';
 
 export default function BookingPage() {
   const router = useRouter();
@@ -232,9 +232,17 @@ export default function BookingPage() {
                 <CardTitle>Booking Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <img
+                    src={getRoomImage(room.images)}
+                    alt={room.name}
+                    className="h-52 w-full object-cover"
+                  />
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Room</p>
                   <p className="font-semibold text-foreground">{room.name}</p>
+                  <p className="text-sm text-accent">{room.location || 'Prime city location'}</p>
                 </div>
 
                 <div className="border-t border-border pt-4 space-y-2">

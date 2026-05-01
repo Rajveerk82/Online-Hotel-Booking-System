@@ -13,6 +13,17 @@ export function formatPrice(price: number): string {
   }).format(price);
 }
 
+export function getRoomImage(images?: string[]): string {
+  const validImages = Array.isArray(images)
+    ? images.filter((image) => typeof image === 'string' && image.trim() !== '')
+    : [];
+
+  return (
+    validImages[0] ||
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+  );
+}
+
 export function downloadInvoicePDF(invoice: any, booking?: any) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
@@ -44,17 +55,17 @@ export function downloadInvoicePDF(invoice: any, booking?: any) {
       <body>
         <div class="invoice-box">
           <div class="header">
-            <div class="logo">HotelHub</div>
+            <div class="logo">Online Hotel Booking System</div>
             <div class="status-paid">${invoice.status}</div>
           </div>
           
           <div class="details">
             <div>
               <strong>From:</strong><br>
-              HotelHub Services<br>
+              Online Hotel Booking System<br>
               123 Luxury Lane, Mumbai<br>
               Maharashtra, India<br>
-              contact@hotelhub.com
+              support@onlinehotelbookingsystem.com
             </div>
             <div style="text-align: right;">
               <strong>Invoice ID:</strong> ${invoice.id.toUpperCase()}<br>
@@ -88,7 +99,7 @@ export function downloadInvoicePDF(invoice: any, booking?: any) {
 
           <div class="footer">
             <p>This is a computer-generated invoice and does not require a signature.</p>
-            <p>&copy; ${new Date().getFullYear()} HotelHub. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} Online Hotel Booking System. All rights reserved.</p>
           </div>
         </div>
         <script>

@@ -1,12 +1,21 @@
+export interface RoomReview {
+  name: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
+
 export interface Room {
   id: string;
   name: string;
   type: 'single' | 'double' | 'suite' | 'penthouse';
+  location?: string;
   description: string;
   price: number;
   capacity: number;
   amenities: string[];
-  images: string[];
+  images?: string[];
+  reviews?: RoomReview[];
   available: boolean;
   createdAt: string;
 }

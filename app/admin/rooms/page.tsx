@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Room } from '@/lib/types';
 import { FieldGroup } from '@/components/ui/field';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, getRoomImage } from '@/lib/utils';
 
 export default function RoomsManagement() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -19,13 +20,16 @@ export default function RoomsManagement() {
   const [newRoom, setNewRoom] = useState({
     name: '',
     type: 'double' as Room['type'],
+    location: '',
     description: '',
     price: 0,
     capacity: 1,
     amenities: '',
-    images: [],
+    imageUrls: '',
     available: true,
   });
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -54,13 +58,23 @@ export default function RoomsManagement() {
         .split(',')
         .map((a) => a.trim())
         .filter((a) => a !== '');
+      const manualImages = newRoom.imageUrls
+        .split(',')
+        .map((image) => image.trim())
+        .filter((image) => image !== '');
+      const images = Array.from(new Set([...(uploadedImages || []), ...manualImages]));
       
       const roomData = {
-        ...newRoom,
+        name: newRoom.name.trim(),
+        type: newRoom.type,
+        location: newRoom.location.trim(),
+        description: newRoom.description.trim(),
         amenities,
+        images,
+        available: newRoom.available,
         price: parseFloat(newRoom.price.toString()),
         capacity: parseInt(newRoom.capacity.toString()),
-        createdAt: editingRoomId 
+        createdAt: editingRoomId
           ? (rooms.find(r => r.id === editingRoomId)?.createdAt || new Date().toISOString())
           : new Date().toISOString(),
       };
@@ -75,7 +89,6 @@ export default function RoomsManagement() {
           {
             id: docRef.id,
             ...roomData,
-            images: [],
           } as Room,
         ]);
       }
@@ -83,13 +96,15 @@ export default function RoomsManagement() {
       setNewRoom({
         name: '',
         type: 'double',
+        location: '',
         description: '',
         price: 0,
         capacity: 1,
         amenities: '',
-        images: [],
+        imageUrls: '',
         available: true,
       });
+      setUploadedImages([]);
       setShowForm(false);
       setEditingRoomId(null);
     } catch (error) {
@@ -101,11 +116,12 @@ export default function RoomsManagement() {
     setNewRoom({
       name: room.name,
       type: room.type,
+      location: room.location || '',
       description: room.description,
       price: room.price,
       capacity: room.capacity,
-      amenities: room.amenities.join(', '),
-      images: room.images || [],
+      amenities: (room.amenities || []).join(', '),
+      imageUrls: (room.images || []).join(', '),
       available: room.available,
     });
     setEditingRoomId(room.id);
@@ -153,11 +169,12 @@ export default function RoomsManagement() {
               setNewRoom({
                 name: '',
                 type: 'double',
+                location: '',
                 description: '',
                 price: 0,
                 capacity: 1,
                 amenities: '',
-                images: [],
+                imageUrls: '',
                 available: true,
               });
             }
@@ -208,6 +225,16 @@ export default function RoomsManagement() {
                 </FieldGroup>
 
                 <FieldGroup>
+                  <label className="text-sm font-medium text-foreground">Location</label>
+                  <Input
+                    value={newRoom.location}
+                    onChange={(e) => setNewRoom({ ...newRoom, location: e.target.value })}
+                    placeholder="Mumbai"
+                    required
+                  />
+                </FieldGroup>
+
+                <FieldGroup>
                   <label className="text-sm font-medium text-foreground">Price per Night</label>
                   <Input
                     type="number"
@@ -251,6 +278,61 @@ export default function RoomsManagement() {
                 />
               </FieldGroup>
 
+              <FieldGroup>
+                <label className="text-sm font-medium text-foreground">Image URLs (comma-separated)</label>
+                <Input
+                  value={newRoom.imageUrls}
+                  onChange={(e) => setNewRoom({ ...newRoom, imageUrls: e.target.value })}
+                  placeholder="https://image1.jpg, https://image2.jpg"
+                />
+              </FieldGroup>
+              
+              <FieldGroup>
+                <label className="text-sm font-medium text-foreground">Upload Images</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (files.length === 0) return;
+                    setUploading(true);
+                    try {
+                      const urls: string[] = [];
+                      for (const file of files) {
+                        const path = `rooms/${editingRoomId || 'new'}/${Date.now()}-${file.name}`;
+                        const storageRef = ref(storage, path);
+                        await uploadBytes(storageRef, file);
+                        const url = await getDownloadURL(storageRef);
+                        urls.push(url);
+                      }
+                      setUploadedImages((prev) => [...prev, ...urls]);
+                      const manual = newRoom.imageUrls
+                        .split(',')
+                        .map((i) => i.trim())
+                        .filter((i) => i !== '');
+                      const combined = Array.from(new Set([...manual, ...urls]));
+                      setNewRoom({ ...newRoom, imageUrls: combined.join(', ') });
+                    } catch (err) {
+                      console.error('Error uploading images:', err);
+                    } finally {
+                      setUploading(false);
+                    }
+                  }}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+                {uploadedImages.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {uploadedImages.map((url) => (
+                      <div key={url} className="overflow-hidden rounded-md border border-border">
+                        <img src={url} alt="Uploaded" className="h-24 w-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {uploading && <p className="mt-2 text-sm text-muted-foreground">Uploading...</p>}
+              </FieldGroup>
+
               <Button
                 type="submit"
                 className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
@@ -272,6 +354,13 @@ export default function RoomsManagement() {
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
+                    <div className="mb-4 overflow-hidden rounded-xl border border-border">
+                      <img
+                        src={getRoomImage(room.images)}
+                        alt={room.name}
+                        className="h-56 w-full object-cover"
+                      />
+                    </div>
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-foreground">{room.name}</h3>
                       <Badge
@@ -285,6 +374,7 @@ export default function RoomsManagement() {
                         {room.available ? 'Available' : 'Unavailable'}
                       </Badge>
                     </div>
+                    <p className="text-sm font-medium text-accent mb-1">{room.location || 'Location not added'}</p>
                     <p className="text-sm text-muted-foreground mb-2">{room.description}</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
